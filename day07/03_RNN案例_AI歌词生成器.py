@@ -47,6 +47,8 @@ def build_vocab():
     return unique_words, word_to_index, word_count, corpus_idx
 
 # 数据预处理，构建数据集
+# 定义数据集类，继承 torch.utils.data.Dataset
+
 
 # 搭建RNN神经网络
 
