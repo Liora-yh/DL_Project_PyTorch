@@ -48,7 +48,38 @@ def build_vocab():
 
 # 数据预处理，构建数据集
 # 定义数据集类，继承 torch.utils.data.Dataset
+class LyricsDataset(torch.utils.data.Dataset):
+    # 初始化词索引，词个数等...
+    def __init__(self, corpus_idx, num_chars):
+        # 文档数据中词的索引
+        self.corpus_idx = corpus_idx
+        # 每个句子中词的个数
+        self.num_chars = num_chars
+        # 文档数据中词的数量，不去重，100000个词
+        self.word_count = len(self.corpus_idx)
+        # 句子数量
+        self.number = self.word_count // self.num_chars
+    # 当使用len(obj)时，自动调用此方法
+    def __len__(self):
+        return self.number
 
+    # 当使用obj[index]时，自动调用此方法
+    def __getitem__(self, idx):
+        # idx: 指向是词的索引，并将其修正索引值到文档的范围里面
+        # 确保索引start再合法范围内，避免越界，start: 当前样本的起始索引
+        start = min(max(idx, 0), self.word_count - self.num_chars - 1)
+
+        # 计算当前样本的结束索引
+        end = start + self.num_chars
+
+        # 输入值，从文档中取出start到end的索引值，作为x
+        x = self.corpus_idx[start:end]      # [0:5]、[1:6]、...
+
+        # 输出值，网络预测结果
+        y = self.corpus_idx[start+1:end+1]
+
+        # 返回输入值和输出值——>张量形式(x, y)
+        return torch.tensor(x), torch.tensor(y)
 
 # 搭建RNN神经网络
 
@@ -60,7 +91,15 @@ if __name__ == '__main__':
     # build_vocab()
     #获取数据，进行分词，获取词表
     unique_words, word_to_index, word_count, corpus_idx = build_vocab()
-    print(f'词的数量：{word_count}')         # 去重后，5703个词
-    print(f'去重后的词：{unique_words}')
-    print(f'每个词的索引：{word_to_index}')
-    print(f'文档中每个词对应的索引：{corpus_idx}')
+    # print(f'词的数量：{word_count}')         # 去重后，5703个词
+    # print(f'去重后的词：{unique_words}')
+    # print(f'每个词的索引：{word_to_index}')
+    # print(f'文档中每个词对应的索引：{corpus_idx}')
+
+    # 构建数据集
+    dataset = LyricsDataset(corpus_idx, 5)
+    print(f'句子数量：{len(dataset)}')
+    # 查看输入值和目标值
+    x, y = dataset[1]
+    print(f'输入值：{x}')
+    print(f'目标值：{y}')
