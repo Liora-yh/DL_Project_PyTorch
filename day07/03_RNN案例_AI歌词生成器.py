@@ -162,9 +162,34 @@ def train():
         # 本轮训练结束，打印本轮的训练信息
         print(f'epoch: {epoch+1}, item: {time.time() - start:.2f}s, loss: {total_loss / iter_num:.4f}')
     # 多轮训练结束（模型训练结束），保存模型
-    torch.save(model.state_dict(), './model/text_generate.pth')
+    torch.save(model.state_dict(), './model/text_generator.pth')
 
 # 模型预测
+def evaluate(start_word, sentence_length):
+    # 构建词典
+    unique_words, word_to_index, unique_word_count, corpus_idx = build_vocab()
+    # 获取模型
+    model = TextGenerator(unique_word_count)
+    # 加载模型参数
+    model.load_state_dict(torch.load('./model/text_generator.pth'))
+    # 获取隐藏层
+    hidden = model.init_hidden(1)
+    # 将输入的开始词转换成索引
+    word_idx = word_to_index[start_word]
+    # 定义列表，存放：产生的词的索引
+    generate_sentence = [word_idx]      # 开始词的索引，是列表的第1个值
+    # 遍历句子长度，获取到每一个词
+    for i in range(sentence_length):
+        # 模型预测
+        output, hidden = model(torch.tensor([[word_idx]]), hidden)
+        # 获取预测结果    argmax()是从所有结果（5703个词的概率）中，找最大值对应的索引
+        word_idx = torch.argmax(output)
+        # 把预测结果添加到列表中
+        generate_sentence.append(word_idx)
+
+    # 将索引转成词
+    for idx in generate_sentence:
+        print(unique_words[idx], end='')
 
 if __name__ == '__main__':
     # build_vocab()
@@ -189,5 +214,8 @@ if __name__ == '__main__':
     # for name, parameter in model.named_parameters():
     #     print(f'参数名称：{name}, 参数维度：{parameter.shape}')
 
-    # 训练并保存模型
-    train()
+    # # 训练并保存模型
+    # train()
+
+    # 测试模型
+    evaluate('分手', 50)
